@@ -37,8 +37,6 @@ func distance(county1 counties, county2 counties) float64 {
 	func roadtrip(county_map map[string]counties) {
 	starting_county := "Eaton"
 	input_line := "If you are seeing this there is an error"
-	//var input_directions [8]string
-	//input_directions := [8]int{"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
 	var near_distance float64
 	var holding_distance float64
 	var new_county string
