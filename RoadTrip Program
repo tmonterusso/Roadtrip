@@ -1,0 +1,207 @@
+package main
+
+import(
+	"fmt"
+	"os"
+	"math"
+	"bufio"
+	"strconv"
+)
+
+type counties struct {
+	Lat float64
+	Long float64
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+func haversine(theta float64) float64 {
+	return math.Pow(math.Sin(theta/2), 2)
+}
+func distance(county1 counties, county2 counties) float64 {
+	var lat_1, long_1, lat_2, long_2, r float64
+	lat_1 = county1.Lat * math.Pi / 180
+	long_1 = county1.Long * math.Pi / 180
+	lat_2 = county2.Lat * math.Pi / 180
+	long_2 = county2.Long * math.Pi / 180
+
+	r = 3959 //radius of earth in miles
+
+	h := haversine(lat_2-lat_1) + math.Cos(lat_1)*math.Cos(lat_2)*haversine(long_2-long_1)
+
+	return 2 * r * math.Asin(math.Sqrt(h))
+}
+	func roadtrip(county_map map[string]counties) {
+	starting_county := "Eaton"
+	input_line := "If you are seeing this there is an error"
+	//var input_directions [8]string
+	//input_directions := [8]int{"N", "NE", "E", "SE", "S", "SW", "W", "NW"}
+	var near_distance float64
+	var holding_distance float64
+	var new_county string
+
+	fmt.Println("Enter Direction (N, NE, E, SE, S, SW, W, NW) to travel to another county. When finished press enter.")
+	input_scan := bufio.NewScanner(os.Stdin)
+	fmt.Println(starting_county, " is the starting county")
+	
+	for input_scan.Scan() {
+		direction_check := false
+		fmt.Println()
+		new_county = "Error"
+
+		near_distance = 1000000
+		holding_distance = 1000000
+		input_line = input_scan.Text()
+		county_info := county_map[starting_county]
+
+		if (input_line == "") {
+			fmt.Println("The roadtrip is now over. Your ended up in", starting_county)
+			break
+		}
+
+		if (input_line == "N" || input_line == "NE" || input_line == "E" || input_line == "SE" || input_line == "S" || input_line == "SW" ||input_line == "W" || input_line == "NW") {
+			direction_check = true
+		}
+
+		if (direction_check == true) {
+			switch input_line {
+			case "N":
+				fmt.Println("Going North")
+				for county, info := range county_map{
+					if(info.Lat > county_info.Lat) {
+						holding_distance = distance(county_info, info)
+						if(holding_distance < near_distance){
+							near_distance = holding_distance
+							new_county = county
+						}
+					}
+				}
+			case "NE":
+				fmt.Println("Going Northeast")
+				for county, info := range county_map{
+					if((info.Lat > county_info.Lat) && (info.Long > county_info.Long)){
+						holding_distance = distance(county_info, info)
+						if(holding_distance < near_distance){
+							near_distance = holding_distance
+							new_county = county
+						}
+					}
+				}
+			case "E":
+				fmt.Println("Going East")
+				for county, info := range county_map{
+					if(info.Long > county_info.Long){
+						holding_distance = distance(county_info, info)
+						if(holding_distance < near_distance){
+							near_distance = holding_distance
+							new_county = county
+						}
+					}
+				}
+			case "SE":
+				fmt.Println("Going Southeast")
+				for county, info := range county_map{
+					if((info.Lat < county_info.Lat) && (info.Long > county_info.Long)){
+						holding_distance = distance(county_info, info)
+						if(holding_distance < near_distance){
+							near_distance = holding_distance
+							new_county = county
+						}
+					}
+				}
+			case "S":
+				fmt.Println("Going South")
+				for county, info := range county_map{
+					if(info.Lat < county_info.Lat){
+						holding_distance = distance(county_info, info)
+						if(holding_distance < near_distance){
+							near_distance = holding_distance
+							new_county = county
+						}
+					}
+				}
+			case "SW":
+				fmt.Println("Going Southwest")
+				for county, info := range county_map{
+					if((info.Lat < county_info.Lat) && (info.Long < county_info.Long)){
+						holding_distance = distance(county_info, info)
+						if(holding_distance < near_distance){
+							near_distance = holding_distance
+							new_county = county
+						}
+					}
+				}
+			case "W":
+				fmt.Println("Going West")
+				for county, info := range county_map{
+					if(info.Long < county_info.Long){
+						holding_distance = distance(county_info, info)
+						if(holding_distance < near_distance){
+							near_distance = holding_distance
+							new_county = county
+						}
+					}
+				}
+			case "NW":
+				fmt.Println("Going Northwest")
+				for county, info := range county_map{
+					if((info.Lat > county_info.Lat) && (info.Long < county_info.Long)){
+						holding_distance = distance(county_info, info)
+						if(holding_distance < near_distance){
+							near_distance = holding_distance
+							new_county = county
+						}
+					}
+				}
+
+			}
+			starting_county = new_county
+		}
+		fmt.Println("You are currently in: ", starting_county)
+	}
+}
+
+func main() {
+	var county_info map[string]counties
+	var coords counties
+	var name string
+	var lat_d string
+	var long_d string
+	county_info = make(map[string]counties)
+
+	f, err := os.Open("counties.txt")
+	check(err)
+
+	defer f.Close()
+
+	f_scan := bufio.NewScanner(f)
+	f_scan.Split(bufio.ScanWords)
+
+	a := 1
+
+	for f_scan.Scan() {
+		if a % 3 == 1 {
+			name = f_scan.Text()
+		}
+
+		if a % 3 == 2 {
+			lat_d = f_scan.Text()
+		}
+
+		if a % 3 == 0 {
+			long_d = f_scan.Text()
+			coords.Lat, _ = (strconv.ParseFloat(lat_d, 64))
+			coords.Long, _ = (strconv.ParseFloat(long_d, 64))
+			county_info[name] = coords
+
+		}
+		a = a+1
+	}
+	roadtrip(county_info)
+	for k, v := range county_info{
+		fmt.Println(k,v)
+	}
+}
